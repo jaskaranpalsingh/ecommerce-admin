@@ -2,26 +2,30 @@ import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 
 const navItems = [
-  { to: "/",            icon: "⊞",  label: "Dashboard"   },
-  { to: "/products",    icon: "📦", label: "Products"     },
-  { to: "/add-product", icon: "➕", label: "Add Product"  },
-  { to: "/orders",      icon: "🛒", label: "Orders"       },
-  { to: "/users",       icon: "👥", label: "Users"        },
-  { to: "/analytics",   icon: "📊", label: "Analytics"    },
-  { to: "/reviews",     icon: "⭐", label: "Reviews"      },
-  { to: "/settings",    icon: "⚙️", label: "Settings"     },
+  { to: "/", icon: "⊞", label: "Dashboard" },
+  { to: "/products", icon: "📦", label: "Products" },
+  { to: "/add-product", icon: "➕", label: "Add Product" },
+  { to: "/orders", icon: "🛒", label: "Orders" },
+  { to: "/users", icon: "👥", label: "Users" },
+  { to: "/analytics", icon: "📊", label: "Analytics" },
+  { to: "/reviews", icon: "⭐", label: "Reviews" },
+  { to: "/settings", icon: "⚙️", label: "Settings" },
 ];
 
-function Sidebar() {
+function Sidebar({ isOpen, onClose }) {
   return (
-    <aside className="sidebar">
-      {/* Logo */}
+    <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+      {/* Logo + close button */}
       <div className="sidebar-logo">
         <div className="logo-icon">A</div>
         <div className="logo-text">
           <span className="logo-title">AdminHub</span>
           <span className="logo-sub">E-Commerce</span>
         </div>
+        {/* ✕ only visible on mobile */}
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close menu">
+          ✕
+        </button>
       </div>
 
       {/* Nav */}
@@ -32,9 +36,8 @@ function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === "/"}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? "active" : ""}`
-            }
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            onClick={onClose}
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
@@ -46,9 +49,8 @@ function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? "active" : ""}`
-            }
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            onClick={onClose}
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>
@@ -60,9 +62,8 @@ function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
-            className={({ isActive }) =>
-              `nav-item ${isActive ? "active" : ""}`
-            }
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            onClick={onClose}
           >
             <span className="nav-icon">{item.icon}</span>
             <span className="nav-label">{item.label}</span>

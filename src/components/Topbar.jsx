@@ -2,22 +2,29 @@ import { useLocation } from "react-router-dom";
 import "./Topbar.css";
 
 const pageTitles = {
-  "/":            { title: "Dashboard",   sub: "Welcome back, Admin 👋" },
-  "/products":    { title: "Products",    sub: "Manage your product catalog" },
+  "/": { title: "Dashboard", sub: "Welcome back, Admin 👋" },
+  "/products": { title: "Products", sub: "Manage your product catalog" },
   "/add-product": { title: "Add Product", sub: "Create a new product listing" },
-  "/orders":      { title: "Orders",      sub: "Track and manage all orders" },
-  "/users":       { title: "Users",       sub: "Manage your customers" },
-  "/analytics":   { title: "Analytics",   sub: "Business insights & reports" },
-  "/reviews":     { title: "Reviews",     sub: "Customer feedback & ratings" },
-  "/settings":    { title: "Settings",    sub: "Configure your admin panel" },
+  "/orders": { title: "Orders", sub: "Track and manage all orders" },
+  "/users": { title: "Users", sub: "Manage your customers" },
+  "/analytics": { title: "Analytics", sub: "Business insights & reports" },
+  "/reviews": { title: "Reviews", sub: "Customer feedback & ratings" },
+  "/settings": { title: "Settings", sub: "Configure your admin panel" },
 };
 
-function Topbar() {
+function Topbar({ onMenuClick }) {
   const { pathname } = useLocation();
   const page = pageTitles[pathname] || { title: "Admin", sub: "" };
 
   return (
     <header className="topbar">
+      {/* Hamburger — only visible on mobile */}
+      <button className="menu-btn" onClick={onMenuClick} aria-label="Toggle menu">
+        <span />
+        <span />
+        <span />
+      </button>
+
       <div className="topbar-left">
         <h2 className="topbar-title">{page.title}</h2>
         <p className="topbar-sub">{page.sub}</p>
