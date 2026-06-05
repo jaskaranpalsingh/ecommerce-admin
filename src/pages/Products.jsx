@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import API from "../Services/api";
 
 function Products() {
@@ -18,7 +18,7 @@ function Products() {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ─── Fetch products ───────────────────────────────────────────────────────
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const res = await API.get("/products");
       setProducts(res.data);
@@ -28,9 +28,10 @@ function Products() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchProducts(); }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // ─── Search filter ────────────────────────────────────────────────────────
   const filtered = products.filter((p) =>

@@ -1,34 +1,87 @@
-const stats = [
-  { icon: "💰", label: "Total Revenue",  value: "$48,295", badge: "+12.5%", trend: "up",   color: "purple" },
-  { icon: "🛒", label: "Total Orders",   value: "1,284",   badge: "+8.1%",  trend: "up",   color: "blue"   },
-  { icon: "📦", label: "Products",       value: "340",     badge: "+4",     trend: "up",   color: "green"  },
-  { icon: "👥", label: "Total Users",    value: "5,923",   badge: "+21%",   trend: "up",   color: "amber"  },
-];
-
-const recentOrders = [
-  { id: "#ORD-001", customer: "Arjun Mehta",    product: "Black Hoodie",      amount: "$49.99",  status: "Delivered" },
-  { id: "#ORD-002", customer: "Priya Sharma",   product: "Running Shoes",     amount: "$89.00",  status: "Processing"},
-  { id: "#ORD-003", customer: "Rahul Singh",    product: "Slim Fit Jeans",    amount: "$39.99",  status: "Pending"   },
-  { id: "#ORD-004", customer: "Neha Kapoor",    product: "Floral Dress",      amount: "$55.00",  status: "Delivered" },
-  { id: "#ORD-005", customer: "Vikram Patel",   product: "Sports T-shirt",    amount: "$24.99",  status: "Cancelled" },
-];
-
-const activity = [
-  { dot: "green",  text: "New order received from Arjun Mehta",  time: "2 min ago" },
-  { dot: "purple", text: "Product 'Black Hoodie' stock updated",  time: "18 min ago"},
-  { dot: "amber",  text: "Review posted on 'Running Shoes'",      time: "1 hr ago"  },
-  { dot: "green",  text: "New user registered: Priya Sharma",     time: "2 hr ago"  },
-  { dot: "red",    text: "Order #ORD-005 was cancelled",          time: "3 hr ago"  },
-];
+import { useEffect, useState } from "react";
+import API from "../Services/api";
 
 const statusClass = {
   Delivered:  "badge-success",
   Processing: "badge-info",
   Pending:    "badge-warning",
   Cancelled:  "badge-danger",
+  Shipped:    "badge-info",
 };
 
+function getRelativeTime(dateString) {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  
+  if (isNaN(date.getTime())) return dateString;
+
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} min ago`;
+  if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? "s" : ""} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  
+  return date.toLocaleDateString();
+}
+
 function Dashboard() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchDashboard = async () => {
+      try {
+        const res = await API.get("/admin/dashboard");
+        if (active) {
+          setData(res.data);
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+        if (active) {
+          setError("Failed to load dashboard data. Please make sure the backend server is running.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    fetchDashboard();
+    return () => { active = false; };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" />
+        <span>Loading dashboard...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="empty-state">
+        <div className="empty-icon">⚠️</div>
+        <p style={{ color: "var(--danger)" }}>{error}</p>
+      </div>
+    );
+  }
+
+  const stats = [
+    { icon: "💰", label: "Total Revenue",  value: data?.stats?.totalRevenue || "$0.00", badge: "Live", trend: "up",   color: "purple" },
+    { icon: "🛒", label: "Total Orders",   value: data?.stats?.totalOrders || "0",      badge: "Live", trend: "up",   color: "blue"   },
+    { icon: "📦", label: "Products",       value: data?.stats?.totalProducts || "0",    badge: "Live", trend: "up",   color: "green"  },
+    { icon: "👥", label: "Total Users",    value: data?.stats?.totalUsers || "0",       badge: "Live", trend: "up",   color: "amber"  },
+  ];
+
   return (
     <>
       <div className="page-header">
@@ -44,7 +97,7 @@ function Dashboard() {
             <div className="stat-info">
               <h3>{s.value}</h3>
               <p>{s.label}</p>
-              <span className={`stat-badge ${s.trend}`}>{s.badge} this month</span>
+              <span className={`stat-badge ${s.trend}`}>{s.badge}</span>
             </div>
           </div>
         ))}
@@ -72,22 +125,34 @@ function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentOrders.map((o) => (
-                <tr key={o.id}>
-                  <td><span style={{ color: "var(--accent)", fontWeight: 600 }}>{o.id}</span></td>
-                  <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div className="avatar" style={{ width: 28, height: 28, fontSize: "0.65rem" }}>
-                        {o.customer.slice(0, 2).toUpperCase()}
-                      </div>
-                      {o.customer}
-                    </div>
+              {data?.recentOrders?.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: "32px", color: "var(--text-muted)" }}>
+                    No orders placed yet.
                   </td>
-                  <td>{o.product}</td>
-                  <td style={{ fontWeight: 600 }}>{o.amount}</td>
-                  <td><span className={`badge ${statusClass[o.status]}`}>{o.status}</span></td>
                 </tr>
-              ))}
+              ) : (
+                data?.recentOrders?.map((o) => (
+                  <tr key={o.id}>
+                    <td><span style={{ color: "var(--accent)", fontWeight: 600 }}>{o.id}</span></td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div className="avatar" style={{ width: 28, height: 28, fontSize: "0.65rem" }}>
+                          {o.customer.slice(0, 2).toUpperCase()}
+                        </div>
+                        {o.customer}
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={o.product}>
+                        {o.product}
+                      </div>
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{o.amount}</td>
+                    <td><span className={`badge ${statusClass[o.status] || "badge-info"}`}>{o.status}</span></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -95,15 +160,21 @@ function Dashboard() {
         {/* Recent Activity */}
         <div className="card">
           <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "16px" }}>Recent Activity</h2>
-          {activity.map((a, i) => (
-            <div key={i} className="activity-item">
-              <span className={`activity-dot ${a.dot}`} />
-              <div className="activity-info">
-                <p>{a.text}</p>
-                <span>{a.time}</span>
+          {data?.recentActivity?.length === 0 ? (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", textAlign: "center", padding: "32px 0" }}>
+              No recent activity.
+            </p>
+          ) : (
+            data?.recentActivity?.map((a, i) => (
+              <div key={i} className="activity-item">
+                <span className={`activity-dot ${a.dot}`} />
+                <div className="activity-info">
+                  <p>{a.text}</p>
+                  <span>{getRelativeTime(a.time)}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
       </div>

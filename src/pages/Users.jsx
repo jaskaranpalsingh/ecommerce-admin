@@ -1,14 +1,5 @@
-import { useState } from "react";
-
-const initialUsers = [
-  { id: 1, name: "Arjun Mehta", email: "arjun.mehta@example.com", role: "Customer", status: "Active", spent: "$450.00", joined: "12 May 2026" },
-  { id: 2, name: "Priya Sharma", email: "priya.s@example.com", role: "Customer", status: "Active", spent: "$890.00", joined: "15 May 2026" },
-  { id: 3, name: "Rahul Singh", email: "rahul.singh@example.com", role: "Customer", status: "Inactive", spent: "$120.50", joined: "18 May 2026" },
-  { id: 4, name: "Neha Kapoor", email: "neha.k@example.com", role: "Customer", status: "Active", spent: "$55.00", joined: "20 May 2026" },
-  { id: 5, name: "Vikram Patel", email: "vikram.p@example.com", role: "Customer", status: "Blocked", spent: "$0.00", joined: "22 May 2026" },
-  { id: 6, name: "Ananya Gupta", email: "ananya.g@example.com", role: "Customer", status: "Active", spent: "$1,200.00", joined: "25 May 2026" },
-  { id: 7, name: "Ravi Kumar", email: "ravi.k@example.com", role: "Customer", status: "Active", spent: "$44.00", joined: "28 May 2026" },
-];
+import { useEffect, useState } from "react";
+import API from "../Services/api";
 
 const statusClass = {
   Active: "badge-success",
@@ -17,32 +8,87 @@ const statusClass = {
 };
 
 function Users() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const fetchUsers = async () => {
+      try {
+        const res = await API.get("/admin/users");
+        if (active) {
+          setUsers(res.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        if (active) {
+          setError("Failed to fetch users. Make sure the backend server is running.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+    fetchUsers();
+    return () => { active = false; };
+  }, []);
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(search.toLowerCase()) ||
-      user.email.toLowerCase().includes(search.toLowerCase())
+      (user.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (user.email || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleStatus = (id) => {
-    setUsers(
-      users.map((u) => {
-        if (u.id === id) {
-          const nextStatus = u.status === "Active" ? "Blocked" : "Active";
-          return { ...u, status: nextStatus };
-        }
-        return u;
-      })
-    );
-  };
-
-  const deleteUser = (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers(users.filter((u) => u.id !== id));
+  const toggleStatus = async (id) => {
+    try {
+      const res = await API.put(`/admin/users/${id}/toggle-block`);
+      // Update local state with returned status
+      setUsers(
+        users.map((u) => {
+          if (u.id === id) {
+            return { ...u, status: res.data.user.status };
+          }
+          return u;
+        })
+      );
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+      alert("Failed to update user block status. Please try again.");
     }
   };
+
+  const deleteUser = async (id) => {
+    if (window.confirm("Are you sure you want to delete this user? This will permanently remove their account.")) {
+      try {
+        await API.delete(`/admin/users/${id}`);
+        setUsers(users.filter((u) => u.id !== id));
+      } catch (err) {
+        console.error("Failed to delete user:", err);
+        alert("Failed to delete user. Please try again.");
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" />
+        <span>Loading users...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="empty-state">
+        <div className="empty-icon">⚠️</div>
+        <p style={{ color: "var(--danger)" }}>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -91,7 +137,7 @@ function Users() {
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                       <div className="avatar" style={{ width: 32, height: 32, fontSize: "0.75rem" }}>
-                        {user.name.slice(0, 2).toUpperCase()}
+                        {(user.name || "US").slice(0, 2).toUpperCase()}
                       </div>
                       <span style={{ fontWeight: 600 }}>{user.name}</span>
                     </div>
@@ -101,7 +147,7 @@ function Users() {
                     <span className="badge badge-purple">{user.role}</span>
                   </td>
                   <td>
-                    <span className={`badge ${statusClass[user.status]}`}>{user.status}</span>
+                    <span className={`badge ${statusClass[user.status] || "badge-info"}`}>{user.status}</span>
                   </td>
                   <td style={{ fontWeight: 600 }}>{user.spent}</td>
                   <td style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>{user.joined}</td>
