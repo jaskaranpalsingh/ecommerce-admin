@@ -1,35 +1,24 @@
-import { useState, useEffect } from "react";
-import API from "../Services/api";
+import { useState } from "react";
 
 function Analytics() {
   const [timeRange, setTimeRange] = useState("7 Days");
   const [activeCard, setActiveCard] = useState("profit");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let active = true;
-    const fetchAnalytics = async () => {
-      try {
-        const res = await API.get("/admin/analytics");
-        if (active) {
-          setData(res.data);
-        }
-      } catch (err) {
-        console.error("Analytics fetch error:", err);
-        if (active) {
-          setError("Failed to load analytics data. Please make sure the backend server is running.");
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-    fetchAnalytics();
-    return () => { active = false; };
-  }, []);
+  const monthlySales = [
+    { month: "Jan", sales: 85, orders: 420 },
+    { month: "Feb", sales: 70, orders: 380 },
+    { month: "Mar", sales: 95, orders: 510 },
+    { month: "Apr", sales: 110, orders: 600 },
+    { month: "May", sales: 130, orders: 720 },
+    { month: "Jun", sales: 155, orders: 840 },
+  ];
+
+  const topProducts = [
+    { name: "Black Hoodie", sales: 420, revenue: "$20,995", stock: 5 },
+    { name: "Running Shoes", sales: 310, revenue: "$27,590", stock: 12 },
+    { name: "Slim Fit Jeans", sales: 250, revenue: "$9,997", stock: 0 },
+    { name: "Floral Dress", sales: 195, revenue: "$10,725", stock: 42 },
+  ];
 
   const formatStock = (stock) => {
     return `${String(stock).padStart(2, "0")} remaining`;
@@ -45,26 +34,6 @@ function Analytics() {
       transition: "all 0.25s ease",
     };
   };
-
-  if (loading) {
-    return (
-      <div className="loading-state">
-        <div className="spinner" />
-        <span>Loading analytics...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="empty-state">
-        <div className="empty-icon">⚠️</div>
-        <p style={{ color: "var(--danger)" }}>{error}</p>
-      </div>
-    );
-  }
-
-  const { stats, monthlySales, topProducts } = data || {};
 
   return (
     <>
@@ -104,7 +73,7 @@ function Analytics() {
         >
           <div className="stat-icon purple">📈</div>
           <div className="stat-info">
-            <h3>{stats?.netProfit || "$0"}</h3>
+            <h3>$12,482</h3>
             <p>Net Profit</p>
             <span className="stat-badge up">+14.2%</span>
           </div>
@@ -116,7 +85,7 @@ function Analytics() {
         >
           <div className="stat-icon green">🎯</div>
           <div className="stat-info">
-            <h3>{stats?.conversionRate || "0%"}</h3>
+            <h3>64.3%</h3>
             <p>Conversion Rate</p>
             <span className="stat-badge up">+2.1%</span>
           </div>
@@ -128,7 +97,7 @@ function Analytics() {
         >
           <div className="stat-icon blue">🖱️</div>
           <div className="stat-info">
-            <h3>{stats?.pageViews || "0"}</h3>
+            <h3>45,182</h3>
             <p>Page Views</p>
             <span className="stat-badge up">+18.5%</span>
           </div>
@@ -140,7 +109,7 @@ function Analytics() {
         >
           <div className="stat-icon amber">🛍️</div>
           <div className="stat-info">
-            <h3>{stats?.avgOrderValue || "$0.00"}</h3>
+            <h3>$38.50</h3>
             <p>Avg Order Value</p>
             <span className="stat-badge down">-1.4%</span>
           </div>
@@ -152,9 +121,9 @@ function Analytics() {
         <div className="card">
           <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px" }}>Sales Revenue Trend</h2>
           <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Monthly growth comparison in USD</p>
-          
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: "260px", marginTop: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border)" }}>
-            {(monthlySales || []).map((data) => (
+            {monthlySales.map((data) => (
               <div key={data.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
                 <div style={{ position: "relative", width: "100%", display: "flex", justifyContent: "center", height: "200px", alignItems: "flex-end" }}>
                   {/* Tooltip on hover */}
@@ -171,7 +140,7 @@ function Analytics() {
                   }}>
                     ${data.sales}k
                   </span>
-                  
+
                   {/* Bar */}
                   <div style={{
                     width: "16px",
@@ -191,9 +160,9 @@ function Analytics() {
         <div className="card">
           <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "8px" }}>Order Volume Trend</h2>
           <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Total processed orders per month</p>
-          
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", height: "260px", marginTop: "24px", paddingBottom: "12px", borderBottom: "1px solid var(--border)" }}>
-            {(monthlySales || []).map((data) => {
+            {monthlySales.map((data) => {
               const barHeight = data.orders / 5;
               return (
                 <div key={data.month} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
@@ -211,7 +180,7 @@ function Analytics() {
                     }}>
                       {data.orders}
                     </span>
-                    
+
                     {/* Bar */}
                     <div style={{
                       width: "16px",
@@ -244,7 +213,7 @@ function Analytics() {
             </tr>
           </thead>
           <tbody>
-            {(topProducts || []).map((p, index) => (
+            {topProducts.map((p, index) => (
               <tr key={index}>
                 <td style={{ fontWeight: 600 }}>{p.name}</td>
                 <td>{p.sales} units</td>
